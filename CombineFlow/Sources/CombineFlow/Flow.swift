@@ -9,12 +9,14 @@ private enum FlowAssociatedKeys {
     nonisolated(unsafe) static var subjectContext: UInt8 = 0
 }
 
+@MainActor
 public protocol Flow: AnyObject, Presentable, Synchronizable {
     var root: Presentable { get }
     func adapt(step: Step) -> AnyPublisher<Step, Never>
     func navigate(to step: Step) -> FlowContributors
 }
 
+@MainActor
 public extension Flow {
     func adapt(step: Step) -> AnyPublisher<Step, Never> {
         Just(step).eraseToAnyPublisher()
@@ -65,6 +67,7 @@ private enum FlowsReadinessStore {
     }
 }
 
+@MainActor
 private extension Flows {
     static func whenReady(_ flows: [Flow], block: @escaping () -> Void) {
         guard !flows.isEmpty else { block(); return }
@@ -89,6 +92,7 @@ private extension Flows {
     }
 }
 
+@MainActor
 public enum Flows {
     public enum ExecuteStrategy {
         case ready

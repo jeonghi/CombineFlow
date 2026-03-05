@@ -1,6 +1,5 @@
 import CombineFlow
 
-@MainActor
 final class CounterStepper: Stepper {
     let steps = PublishRelay<Step>()
 

@@ -1,7 +1,6 @@
 import CombineFlow
 import UIKit
 
-@MainActor
 final class CounterFlow: Flow {
     private weak var navigationController: UINavigationController?
     private let stepper = CounterStepper()

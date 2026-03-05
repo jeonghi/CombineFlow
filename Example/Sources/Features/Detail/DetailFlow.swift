@@ -2,13 +2,11 @@ import CombineFlow
 import SwiftUI
 import UIKit
 
-@MainActor
-final class DetailStepper: Stepper {
+final class DetailStepper: CombineFlow.Stepper {
     let steps = PublishRelay<Step>()
     func dismiss() { steps.accept(DetailStep.dismiss) }
 }
 
-@MainActor
 final class DetailFlow: Flow {
     private weak var navigationController: UINavigationController?
     private let stepper = DetailStepper()

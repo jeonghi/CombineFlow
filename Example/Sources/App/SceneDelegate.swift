@@ -16,8 +16,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         self.window = window
 
-        Flows.use(appFlow, when: .created) { (root: UINavigationController) in
-            window.rootViewController = root
+        Flows.use([appFlow], when: .created) { (roots: [UINavigationController]) in
+            window.rootViewController = roots.first
             window.makeKeyAndVisible()
         }
 

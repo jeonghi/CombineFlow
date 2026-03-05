@@ -5,6 +5,7 @@
 import Combine
 import Foundation
 
+@MainActor
 public final class FlowCoordinator: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var childFlowCoordinators = [String: FlowCoordinator]()
@@ -40,7 +41,6 @@ public final class FlowCoordinator: NSObject {
         allowStepWhenDismissed: Bool = false
     ) {
         self.stepsRelay
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] step in self?.adaptAndNavigate(step: step, in: flow) }
             .store(in: &self.cancellables)
 
@@ -67,7 +67,6 @@ public final class FlowCoordinator: NSObject {
     private func adaptAndNavigate(step: Step, in flow: Flow) {
         flow.adapt(step: step)
             .prefix(1)
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] adaptedStep in
                 guard let self else { return }
                 self.willNavigateRelay.accept((flow, adaptedStep))

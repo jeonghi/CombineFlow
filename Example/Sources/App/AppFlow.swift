@@ -1,7 +1,6 @@
 import CombineFlow
 import UIKit
 
-@MainActor
 final class AppFlow: Flow {
     private let navigationController = UINavigationController()
 

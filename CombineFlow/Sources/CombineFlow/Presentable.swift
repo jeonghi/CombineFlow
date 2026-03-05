@@ -5,6 +5,7 @@
 import Combine
 import UIKit.UIViewController
 
+@MainActor
 public protocol Presentable {
     var visible: AnyPublisher<Bool, Never> { get }
     var dismissed: AnyPublisher<Void, Never> { get }
@@ -20,6 +21,7 @@ public extension Presentable where Self: UIViewController {
     }
 }
 
+@MainActor
 public extension Presentable where Self: Flow {
     var visible: AnyPublisher<Bool, Never> { self.root.visible }
     var dismissed: AnyPublisher<Void, Never> { self.root.dismissed }
