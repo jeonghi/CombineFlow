@@ -22,7 +22,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         coordinator.coordinate(
             flow: appFlow,
-            with: OneStepper(withSingleStep: AppStep.splash)
+            with: appFlow.stepper
         )
     }
 }
