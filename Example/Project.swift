@@ -3,6 +3,12 @@ import ProjectDescription
 let project = Project(
     name: "CombineFlowExample",
     options: .options(automaticSchemesOptions: .enabled()),
+    packages: [
+        .remote(
+            url: "https://github.com/pointfreeco/swift-composable-architecture",
+            requirement: .upToNextMajor(from: "1.10.0")
+        )
+    ],
     targets: [
         .target(
             name: "CombineFlowExample",
@@ -27,7 +33,8 @@ let project = Project(
             ]),
             buildableFolders: ["Sources"],
             dependencies: [
-                .project(target: "CombineFlow", path: "../CombineFlow")
+                .project(target: "CombineFlow", path: "../CombineFlow"),
+                .package(product: "ComposableArchitecture")
             ],
             settings: .settings(base: [
                 "SWIFT_VERSION": "6.0"
