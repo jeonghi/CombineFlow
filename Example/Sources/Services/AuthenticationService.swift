@@ -40,6 +40,11 @@ final class AuthenticationService {
         _authEvents.send(.tokenExpired)
     }
 
+    func cancelExpirationTimer() {
+        expirationTask?.cancel()
+        expirationTask = nil
+    }
+
     func startExpirationTimer(after seconds: TimeInterval) {
         expirationTask?.cancel()
         expirationTask = Task { [weak self] in

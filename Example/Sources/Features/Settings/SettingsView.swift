@@ -51,6 +51,8 @@ struct SettingsView: View {
             .onChange(of: timerActive) { _, active in
                 if active {
                     AuthenticationService.shared.startExpirationTimer(after: 30)
+                } else {
+                    AuthenticationService.shared.cancelExpirationTimer()
                 }
             }
     }
