@@ -27,8 +27,11 @@ final class MainFlow: Flow {
         let reactorNav = UINavigationController()
         reactorNav.tabBarItem = UITabBarItem(title: "Reactor", image: UIImage(systemName: "4.circle"), tag: 3)
 
+        let settingsNav = UINavigationController()
+        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gearshape"), tag: 4)
+
         tabBarController.setViewControllers(
-            [mvvmNav, tcaNav, mviNav, reactorNav],
+            [mvvmNav, tcaNav, mviNav, reactorNav, settingsNav],
             animated: false
         )
 
@@ -36,6 +39,7 @@ final class MainFlow: Flow {
         let tcaFlow = TCAFlow(navigationController: tcaNav)
         let mviFlow = MVIFlow(navigationController: mviNav)
         let reactorFlow = ReactorFlow(navigationController: reactorNav)
+        let settingsFlow = SettingsFlow(navigationController: settingsNav)
 
         return .multiple(flowContributors: [
             .contribute(
@@ -53,6 +57,10 @@ final class MainFlow: Flow {
             .contribute(
                 withNextPresentable: reactorFlow,
                 withNextStepper: OneStepper(withSingleStep: CounterStep.showCounter)
+            ),
+            .contribute(
+                withNextPresentable: settingsFlow,
+                withNextStepper: OneStepper(withSingleStep: SettingsStep.showSettings)
             ),
         ])
     }
