@@ -70,6 +70,47 @@ Coordinates flows, forwards steps, and applies optional step adaptation.
 
 _KR: Flow 연결, Step 전달, adaptation 처리를 담당합니다._
 
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    AppEntry["SceneDelegate / AppDelegate"] --> Coordinator["FlowCoordinator"]
+    Coordinator --> AppFlow["AppFlow"]
+
+    AppFlow --> Splash["SplashFlow"]
+    AppFlow --> Login["LoginFlow"]
+    AppFlow --> Main["MainFlow"]
+
+    Main --> MVVM["MVVMFlow"]
+    Main --> TCA["TCAFlow"]
+    Main --> MVI["MVIFlow"]
+    Main --> Reactor["ReactorFlow"]
+    Main --> Settings["SettingsFlow"]
+```
+
+_KR: AppFlow가 상위 흐름을 잡고 MainFlow 아래에서 탭별 하위 Flow가 독립적으로 동작하는 구조입니다._
+
+## Step Lifecycle Diagram
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Stepper
+    participant Coordinator as FlowCoordinator
+    participant Flow
+    participant Next as Next Presentable/Stepper
+
+    User->>Stepper: Trigger action
+    Stepper->>Coordinator: emit Step
+    Coordinator->>Flow: adapt(step:)
+    Flow-->>Coordinator: adapted Step
+    Coordinator->>Flow: navigate(to:)
+    Flow-->>Coordinator: FlowContributors
+    Coordinator->>Next: connect and listen
+```
+
+_KR: Step은 Stepper에서 시작해 adaptation, navigation, contributor 연결 순서로 처리됩니다._
+
 ## Getting Started
 
 This repository uses Tuist.
