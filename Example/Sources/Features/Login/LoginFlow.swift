@@ -34,6 +34,7 @@ final class LoginFlow: Flow {
                 withNextStepper: stepper
             ))
         case .loginCompleted(let token):
+            AuthenticationService.shared.login(token: token)
             return .end(forwardToParentFlowWithStep: AppStep.loginCompleted(token: token))
         }
     }
