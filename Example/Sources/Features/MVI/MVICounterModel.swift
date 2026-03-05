@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 @MainActor
@@ -13,9 +12,12 @@ final class MVICounterModel: ObservableObject {
 
     func process(_ intent: Intent) {
         switch intent {
-        case .increment: count += 1
-        case .decrement: count -= 1
-        case .reset:     count = 0
+        case .increment:
+            count += 1
+        case .decrement:
+            count -= 1
+        case .reset:
+            count = 0
         }
     }
 }

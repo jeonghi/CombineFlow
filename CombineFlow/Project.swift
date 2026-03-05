@@ -15,6 +15,21 @@ let project = Project(
             settings: .settings(base: [
                 "SWIFT_VERSION": "6.0"
             ])
+        ),
+        .target(
+            name: "CombineFlowTests",
+            destinations: .iOS,
+            product: .unitTests,
+            bundleId: "io.combineflow.CombineFlowTests",
+            deploymentTargets: .iOS("17.0"),
+            infoPlist: .default,
+            sources: ["Tests/**"],
+            dependencies: [
+                .target(name: "CombineFlow")
+            ],
+            settings: .settings(base: [
+                "SWIFT_VERSION": "6.0"
+            ])
         )
     ]
 )

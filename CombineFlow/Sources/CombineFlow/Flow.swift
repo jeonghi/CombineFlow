@@ -24,15 +24,15 @@ public extension Flow {
 }
 
 extension Flow {
-    internal var flowReadySubject: PublishRelay<Bool> {
+    internal var flowReadySubject: CurrentValueSubject<Bool, Never> {
         self.synchronized {
             if let subject = objc_getAssociatedObject(
                 self,
                 &FlowAssociatedKeys.subjectContext
-            ) as? PublishRelay<Bool> {
+            ) as? CurrentValueSubject<Bool, Never> {
                 return subject
             }
-            let newSubject = PublishRelay<Bool>()
+            let newSubject = CurrentValueSubject<Bool, Never>(false)
             objc_setAssociatedObject(
                 self,
                 &FlowAssociatedKeys.subjectContext,
@@ -45,6 +45,7 @@ extension Flow {
 
     internal var flowReadyPublisher: AnyPublisher<Bool, Never> {
         self.flowReadySubject
+            .filter { $0 }
             .prefix(1)
             .eraseToAnyPublisher()
     }
@@ -106,7 +107,10 @@ public enum Flows {
     ) {
         let roots = flows.compactMap { $0.root as? Root }
         guard roots.count == flows.count else {
-            fatalError("Type mismatch, Flows roots types do not match the types awaited in the block")
+#if DEBUG
+            debugPrint("Type mismatch, Flows roots types do not match the types awaited in the block")
+#endif
+            return
         }
         switch strategy {
         case .created: block(roots)
@@ -121,7 +125,10 @@ public enum Flows {
         block: @escaping (Root1, Root2) -> Void
     ) {
         guard let root1 = flow1.root as? Root1, let root2 = flow2.root as? Root2 else {
-            fatalError("Type mismatch, Flows roots types do not match the types awaited in the block")
+#if DEBUG
+            debugPrint("Type mismatch, Flows roots types do not match the types awaited in the block")
+#endif
+            return
         }
         switch strategy {
         case .created: block(root1, root2)
@@ -141,7 +148,10 @@ public enum Flows {
             let root2 = flow2.root as? Root2,
             let root3 = flow3.root as? Root3
         else {
-            fatalError("Type mismatch, Flows roots types do not match the types awaited in the block")
+#if DEBUG
+            debugPrint("Type mismatch, Flows roots types do not match the types awaited in the block")
+#endif
+            return
         }
         switch strategy {
         case .created: block(root1, root2, root3)

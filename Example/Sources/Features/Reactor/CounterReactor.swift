@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 @MainActor
@@ -27,16 +26,20 @@ final class CounterReactor: ObservableObject {
 
     private func mutate(action: Action) -> [Mutation] {
         switch action {
-        case .increment: return [.setCount(state.count + 1)]
-        case .decrement: return [.setCount(state.count - 1)]
-        case .reset:     return [.setCount(0)]
+        case .increment:
+            return [.setCount(state.count + 1)]
+        case .decrement:
+            return [.setCount(state.count - 1)]
+        case .reset:
+            return [.setCount(0)]
         }
     }
 
     private func reduce(state: State, mutation: Mutation) -> State {
         var newState = state
         switch mutation {
-        case .setCount(let value): newState.count = value
+        case .setCount(let value):
+            newState.count = value
         }
         return newState
     }

@@ -5,11 +5,9 @@ struct SplashView: View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
             VStack(spacing: 12) {
-                Text("⚡")
-                    .font(.system(size: 64))
                 Text("CombineFlow")
-                    .font(.largeTitle.bold())
-                Text("Architecture Examples")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                Text("Architecture Example")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

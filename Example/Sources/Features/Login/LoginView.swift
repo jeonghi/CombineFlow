@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct LoginView: View {
@@ -6,32 +7,33 @@ struct LoginView: View {
     var body: some View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
-            VStack(spacing: 32) {
+
+            VStack(spacing: 24) {
                 Spacer()
+
                 VStack(spacing: 8) {
-                    Text("⚡")
-                        .font(.system(size: 56))
                     Text("CombineFlow")
-                        .font(.largeTitle.bold())
-                    Text("Architecture Examples")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                    Text("Architecture Example")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+
                 Spacer()
+
                 Button {
-                    let token = UUID().uuidString
-                    onLogin(token)
+                    onLogin(UUID().uuidString)
                 } label: {
-                    Text("로그인")
+                    Text("Sign in")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
-                        .padding()
+                        .padding(.vertical, 14)
                         .background(Color.accentColor)
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 48)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
             }
         }
     }

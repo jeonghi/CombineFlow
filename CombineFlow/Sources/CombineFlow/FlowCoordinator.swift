@@ -8,6 +8,8 @@ import Foundation
 @MainActor
 public final class FlowCoordinator: NSObject {
     private var cancellables = Set<AnyCancellable>()
+    private var stepAdaptationCancellables = [UUID: AnyCancellable]()
+    private var stepAdaptationWatchdogs = [UUID: DispatchWorkItem]()
     private var childFlowCoordinators = [String: FlowCoordinator]()
     private weak var parentFlowCoordinator: FlowCoordinator? {
         didSet {
@@ -24,6 +26,10 @@ public final class FlowCoordinator: NSObject {
     private let stepsRelay = PublishRelay<Step>()
     private let willNavigateRelay = PublishRelay<(Flow, Step)>()
     private let didNavigateRelay = PublishRelay<(Flow, Step)>()
+
+    /// `adapt(step:)`가 값을 방출하지 않을 때 pending adaptation을 취소하는 watchdog 간격(초).
+    /// 0 이하로 설정하면 watchdog을 비활성화합니다.
+    public static var adaptationWatchdogInterval: TimeInterval = 5
 
     internal let identifier = UUID().uuidString
 
@@ -65,16 +71,23 @@ public final class FlowCoordinator: NSObject {
     }
 
     private func adaptAndNavigate(step: Step, in flow: Flow) {
-        flow.adapt(step: step)
+        let adaptationID = UUID()
+        let adaptationCancellable = flow.adapt(step: step)
             .prefix(1)
-            .sink { [weak self] adaptedStep in
-                guard let self else { return }
-                self.willNavigateRelay.accept((flow, adaptedStep))
-                let flowContributors = flow.navigate(to: adaptedStep)
-                self.didNavigateRelay.accept((flow, adaptedStep))
-                self.handle(flowContributors: flowContributors, in: flow)
-            }
-            .store(in: &self.cancellables)
+            .sink(
+                receiveCompletion: { [weak self] _ in
+                    self?.clearAdaptationTracking(for: adaptationID)
+                },
+                receiveValue: { [weak self] adaptedStep in
+                    guard let self else { return }
+                    self.willNavigateRelay.accept((flow, adaptedStep))
+                    let flowContributors = flow.navigate(to: adaptedStep)
+                    self.didNavigateRelay.accept((flow, adaptedStep))
+                    self.handle(flowContributors: flowContributors, in: flow)
+                }
+            )
+        self.stepAdaptationCancellables[adaptationID] = adaptationCancellable
+        self.scheduleAdaptationWatchdog(for: adaptationID)
     }
 
     private func handle(flowContributors: FlowContributors, in flow: Flow) {
@@ -103,6 +116,10 @@ public final class FlowCoordinator: NSObject {
     }
 
     private func cleanupRelations() {
+        self.stepAdaptationCancellables.values.forEach { $0.cancel() }
+        self.stepAdaptationCancellables.removeAll()
+        self.stepAdaptationWatchdogs.values.forEach { $0.cancel() }
+        self.stepAdaptationWatchdogs.removeAll()
         self.childFlowCoordinators.removeAll()
         self.parentFlowCoordinator?.childFlowCoordinators.removeValue(forKey: self.identifier)
     }
@@ -162,16 +179,14 @@ public final class FlowCoordinator: NSObject {
                 .store(in: &self.cancellables)
         }
 
-        var stepStreamCancellable: AnyCancellable?
-
-        if !allowStepWhenDismissed {
-            presentable.dismissed
+        let dismissalSignal: AnyPublisher<Void, Never>
+        if allowStepWhenDismissed {
+            dismissalSignal = Empty<Void, Never>(completeImmediately: false).eraseToAnyPublisher()
+        } else {
+            dismissalSignal = presentable.dismissed
                 .prefix(1)
-                .sink { _ in
-                    context.isDismissed = true
-                    stepStreamCancellable?.cancel()
-                }
-                .store(in: &self.cancellables)
+                .handleEvents(receiveOutput: { _ in context.isDismissed = true })
+                .eraseToAnyPublisher()
         }
 
         let forwardStep: (Step) -> Void = { [weak self] step in
@@ -181,18 +196,20 @@ public final class FlowCoordinator: NSObject {
             self?.stepsRelay.accept(step)
         }
 
+        stepper.steps
+            .prefix(untilOutputFrom: dismissalSignal)
+            .sink { step in forwardStep(step) }
+            .store(in: &self.cancellables)
+
         stepper.readyToEmitSteps()
         forwardStep(stepper.initialStep)
-
-        stepStreamCancellable = stepper.steps.sink { step in forwardStep(step) }
-        stepStreamCancellable?.store(in: &self.cancellables)
     }
 
     private func setReadiness(for flow: Flow, basedOn presentables: [Presentable]) {
         let childFlows = presentables.filter { $0 is Flow }.map { $0 as! Flow }
 
         guard !childFlows.isEmpty else {
-            flow.flowReadySubject.accept(true)
+            flow.flowReadySubject.send(true)
             return
         }
 
@@ -208,10 +225,33 @@ public final class FlowCoordinator: NSObject {
                     readyCount += 1
                     let isReady = readyCount == expectedReadyCount
                     lock.unlock()
-                    if isReady { flow?.flowReadySubject.accept(true) }
+                    if isReady { flow?.flowReadySubject.send(true) }
                 }
                 .store(in: &self.cancellables)
         }
+    }
+
+    private func scheduleAdaptationWatchdog(for adaptationID: UUID) {
+        guard Self.adaptationWatchdogInterval > 0 else { return }
+
+        let watchdog = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            guard let cancellable = self.stepAdaptationCancellables[adaptationID] else { return }
+
+            cancellable.cancel()
+            self.clearAdaptationTracking(for: adaptationID)
+        }
+
+        self.stepAdaptationWatchdogs[adaptationID] = watchdog
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + Self.adaptationWatchdogInterval,
+            execute: watchdog
+        )
+    }
+
+    private func clearAdaptationTracking(for adaptationID: UUID) {
+        self.stepAdaptationCancellables.removeValue(forKey: adaptationID)
+        self.stepAdaptationWatchdogs.removeValue(forKey: adaptationID)?.cancel()
     }
 }
 

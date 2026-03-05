@@ -1,67 +1,66 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var tokenDisplay: String = ""
-    @State private var timerActive = false
+    let onShowDetail: () -> Void
+
+    @State private var tokenDisplay = "None"
+    @State private var timerEnabled = false
+
+    init(onShowDetail: @escaping () -> Void = {}) {
+        self.onShowDetail = onShowDetail
+    }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section("계정") {
-                    tokenRow
-                    logoutButton
+        List {
+            Section("Account") {
+                HStack {
+                    Text("Token")
+                    Spacer()
+                    Text(tokenDisplay)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
                 }
-                Section("개발자 도구") {
-                    expireButton
-                    timerToggle
-                }
-            }
-            .navigationTitle("Settings")
-            .onAppear { refreshToken() }
-        }
-    }
 
-    private var tokenRow: some View {
-        HStack {
-            Text("토큰")
-            Spacer()
-            Text(tokenDisplay)
-                .foregroundStyle(.secondary)
-                .font(.caption.monospaced())
-        }
-    }
-
-    private var logoutButton: some View {
-        Button(role: .destructive) {
-            AuthenticationService.shared.logout()
-        } label: {
-            Text("로그아웃")
-        }
-    }
-
-    private var expireButton: some View {
-        Button("토큰 만료 시뮬레이션") {
-            AuthenticationService.shared.expireToken()
-        }
-        .foregroundStyle(.orange)
-    }
-
-    private var timerToggle: some View {
-        Toggle("30초 후 자동 만료", isOn: $timerActive)
-            .onChange(of: timerActive) { _, active in
-                if active {
-                    AuthenticationService.shared.startExpirationTimer(after: 30)
-                } else {
-                    AuthenticationService.shared.cancelExpirationTimer()
+                Button("Logout", role: .destructive) {
+                    AuthenticationService.shared.logout()
+                    refreshTokenDisplay()
+                    timerEnabled = false
                 }
             }
+
+            Section("Navigation") {
+                Button("Open Detail") {
+                    onShowDetail()
+                }
+            }
+
+            Section("Developer") {
+                Button("Expire token") {
+                    AuthenticationService.shared.expireToken()
+                    refreshTokenDisplay()
+                    timerEnabled = false
+                }
+                .foregroundStyle(.orange)
+
+                Toggle("Auto expire in 30s", isOn: $timerEnabled)
+                    .onChange(of: timerEnabled) { _, isEnabled in
+                        if isEnabled {
+                            AuthenticationService.shared.startExpirationTimer(after: 30)
+                        } else {
+                            AuthenticationService.shared.cancelExpirationTimer()
+                        }
+                    }
+            }
+        }
+        .navigationTitle("Settings")
+        .onAppear { refreshTokenDisplay() }
     }
 
-    private func refreshToken() {
-        if let t = AuthenticationService.shared.token {
-            tokenDisplay = String(t.prefix(8)) + "..."
+    private func refreshTokenDisplay() {
+        if let token = AuthenticationService.shared.token {
+            tokenDisplay = String(token.prefix(8)) + "..."
         } else {
-            tokenDisplay = "없음"
+            tokenDisplay = "None"
         }
     }
 }

@@ -6,13 +6,16 @@ final class LoginStepper: CombineFlow.Stepper {
     let steps = PublishRelay<Step>()
 }
 
+@MainActor
 final class LoginFlow: Flow {
     private weak var navigationController: UINavigationController?
     private let stepper = LoginStepper()
 
     var root: Presentable {
-        guard let nav = navigationController else { fatalError() }
-        return nav
+        guard let navigationController else {
+            fatalError("LoginFlow navigationController deallocated")
+        }
+        return navigationController
     }
 
     init(navigationController: UINavigationController) {
@@ -21,18 +24,21 @@ final class LoginFlow: Flow {
 
     func navigate(to step: Step) -> FlowContributors {
         guard let step = step as? LoginStep else { return .none }
+
         switch step {
         case .showLogin:
             let view = LoginView { [weak self] token in
                 self?.stepper.steps.accept(LoginStep.loginCompleted(token: token))
             }
-            let vc = UIHostingController(rootView: view)
-            vc.navigationItem.hidesBackButton = true
-            navigationController?.setViewControllers([vc], animated: false)
+            let viewController = UIHostingController(rootView: view)
+            viewController.navigationItem.hidesBackButton = true
+            navigationController?.setViewControllers([viewController], animated: false)
+
             return .one(flowContributor: .contribute(
-                withNextPresentable: vc,
+                withNextPresentable: viewController,
                 withNextStepper: stepper
             ))
+
         case .loginCompleted(let token):
             AuthenticationService.shared.login(token: token)
             return .end(forwardToParentFlowWithStep: AppStep.loginCompleted(token: token))

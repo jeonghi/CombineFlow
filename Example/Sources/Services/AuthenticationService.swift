@@ -1,11 +1,9 @@
-// Example/Sources/Services/AuthenticationService.swift
 import Combine
 import Foundation
 
 @MainActor
 final class AuthenticationService {
     static let shared = AuthenticationService()
-    private init() {}
 
     enum AuthEvent: Equatable {
         case loggedIn(token: String)
@@ -14,46 +12,44 @@ final class AuthenticationService {
     }
 
     private(set) var token: String?
-    private let _authEvents = PassthroughSubject<AuthEvent, Never>()
-    var authEvents: AnyPublisher<AuthEvent, Never> { _authEvents.eraseToAnyPublisher() }
+    let authEvents = PassthroughSubject<AuthEvent, Never>()
 
     private var expirationTask: Task<Void, Never>?
 
+    private init() {}
+
     func login(token: String) {
-        expirationTask?.cancel()
-        expirationTask = nil
         self.token = token
-        _authEvents.send(.loggedIn(token: token))
+        authEvents.send(.loggedIn(token: token))
     }
 
     func logout() {
         expirationTask?.cancel()
         expirationTask = nil
         token = nil
-        _authEvents.send(.loggedOut)
+        authEvents.send(.loggedOut)
     }
 
     func expireToken() {
         expirationTask?.cancel()
         expirationTask = nil
         token = nil
-        _authEvents.send(.tokenExpired)
+        authEvents.send(.tokenExpired)
+    }
+
+    func startExpirationTimer(after seconds: TimeInterval) {
+        expirationTask?.cancel()
+        guard seconds > 0 else { return }
+
+        expirationTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.expireToken()
+        }
     }
 
     func cancelExpirationTimer() {
         expirationTask?.cancel()
         expirationTask = nil
-    }
-
-    func startExpirationTimer(after seconds: TimeInterval) {
-        expirationTask?.cancel()
-        expirationTask = Task { @MainActor [weak self] in
-            do {
-                try await Task.sleep(nanoseconds: UInt64(min(seconds, 3600) * 1_000_000_000))
-                self?.expireToken()
-            } catch {
-                // Task was cancelled; do nothing.
-            }
-        }
     }
 }

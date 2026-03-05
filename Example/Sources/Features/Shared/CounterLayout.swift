@@ -7,6 +7,25 @@ struct CounterLayout: View {
     let onIncrement: () -> Void
     let onDecrement: () -> Void
     let onReset: () -> Void
+    let onShowDetail: (() -> Void)?
+
+    init(
+        title: String,
+        subtitle: String,
+        count: Int,
+        onIncrement: @escaping () -> Void,
+        onDecrement: @escaping () -> Void,
+        onReset: @escaping () -> Void,
+        onShowDetail: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.count = count
+        self.onIncrement = onIncrement
+        self.onDecrement = onDecrement
+        self.onReset = onReset
+        self.onShowDetail = onShowDetail
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,28 +36,40 @@ struct CounterLayout: View {
                     .padding(.vertical, 6)
                     .background(Color.accentColor.opacity(0.15))
                     .clipShape(Capsule())
+
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding(.top, 32)
+            .padding(.top, 28)
 
             Spacer()
 
             Text("\(count)")
-                .font(.system(size: 80, weight: .bold, design: .rounded))
+                .font(.system(size: 76, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-                .animation(.spring(duration: 0.3), value: count)
+                .animation(.spring(duration: 0.25), value: count)
+
+            if let onShowDetail {
+                Button {
+                    onShowDetail()
+                } label: {
+                    Label("Open Detail", systemImage: "arrow.right.circle")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 18)
+            }
 
             Spacer()
 
-            HStack(spacing: 24) {
-                CircleButton(symbol: "minus", color: .red) { onDecrement() }
-                CircleButton(symbol: "arrow.counterclockwise", color: .gray) { onReset() }
-                CircleButton(symbol: "plus", color: .green) { onIncrement() }
+            HStack(spacing: 22) {
+                CircleButton(symbol: "minus", color: .red, action: onDecrement)
+                CircleButton(symbol: "arrow.counterclockwise", color: .gray, action: onReset)
+                CircleButton(symbol: "plus", color: .green, action: onIncrement)
             }
-            .padding(.bottom, 48)
+            .padding(.bottom, 42)
         }
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -57,7 +88,7 @@ private struct CircleButton: View {
                 .frame(width: 64, height: 64)
                 .background(color)
                 .clipShape(Circle())
-                .shadow(color: color.opacity(0.4), radius: 8, y: 4)
+                .shadow(color: color.opacity(0.35), radius: 8, y: 4)
         }
     }
 }
