@@ -2,8 +2,11 @@ import CombineFlow
 import Combine
 import UIKit
 
+@MainActor
 final class AppFlow: Flow {
     private let navigationController = UINavigationController()
+    // SceneDelegate requires access to pass this to coordinator.coordinate(flow:with:).
+    // Do not call stepper.steps.accept() directly — use AuthenticationService events instead.
     let stepper = AppStepper()
     private var cancellables = Set<AnyCancellable>()
 
@@ -11,7 +14,12 @@ final class AppFlow: Flow {
 
     init() {
         AuthenticationService.shared.authEvents
-            .filter { $0 == .loggedOut || $0 == .tokenExpired }
+            .filter { event in
+                switch event {
+                case .loggedOut, .tokenExpired: return true
+                case .loggedIn: return false
+                }
+            }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.stepper.steps.accept(AppStep.splash)
