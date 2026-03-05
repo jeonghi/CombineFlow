@@ -47,10 +47,10 @@ final class AuthenticationService {
 
     func startExpirationTimer(after seconds: TimeInterval) {
         expirationTask?.cancel()
-        expirationTask = Task { [weak self] in
+        expirationTask = Task { @MainActor [weak self] in
             do {
                 try await Task.sleep(nanoseconds: UInt64(min(seconds, 3600) * 1_000_000_000))
-                await self?.expireToken()
+                self?.expireToken()
             } catch {
                 // Task was cancelled; do nothing.
             }
