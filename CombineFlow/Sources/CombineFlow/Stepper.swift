@@ -78,6 +78,6 @@ public class CompositeStepper: Stepper {
     }
 }
 
-final class NoneStepper: OneStepper {
-    convenience init() { self.init(withSingleStep: NoneStep()) }
+public final class NoneStepper: OneStepper {
+    public convenience init() { self.init(withSingleStep: NoneStep()) }
 }

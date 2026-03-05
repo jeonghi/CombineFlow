@@ -2,7 +2,7 @@ import CombineFlow
 import SwiftUI
 import UIKit
 
-final class SplashStepper: Stepper {
+final class SplashStepper: CombineFlow.Stepper {
     let steps = PublishRelay<Step>()
 }
 
