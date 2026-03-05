@@ -2,7 +2,8 @@
 import Combine
 import Foundation
 
-final class AuthenticationService: @unchecked Sendable {
+@MainActor
+final class AuthenticationService {
     static let shared = AuthenticationService()
     private init() {}
 
@@ -13,35 +14,41 @@ final class AuthenticationService: @unchecked Sendable {
     }
 
     private(set) var token: String?
-    let authEvents = PassthroughSubject<AuthEvent, Never>()
+    private let _authEvents = PassthroughSubject<AuthEvent, Never>()
+    var authEvents: AnyPublisher<AuthEvent, Never> { _authEvents.eraseToAnyPublisher() }
 
     private var expirationTask: Task<Void, Never>?
 
     func login(token: String) {
+        expirationTask?.cancel()
+        expirationTask = nil
         self.token = token
-        authEvents.send(.loggedIn(token: token))
+        _authEvents.send(.loggedIn(token: token))
     }
 
     func logout() {
         expirationTask?.cancel()
         expirationTask = nil
         token = nil
-        authEvents.send(.loggedOut)
+        _authEvents.send(.loggedOut)
     }
 
     func expireToken() {
         expirationTask?.cancel()
         expirationTask = nil
         token = nil
-        authEvents.send(.tokenExpired)
+        _authEvents.send(.tokenExpired)
     }
 
     func startExpirationTimer(after seconds: TimeInterval) {
         expirationTask?.cancel()
-        expirationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            self?.expireToken()
+        expirationTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(min(seconds, 3600) * 1_000_000_000))
+                await self?.expireToken()
+            } catch {
+                // Task was cancelled; do nothing.
+            }
         }
     }
 }
