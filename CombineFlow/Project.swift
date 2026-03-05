@@ -11,7 +11,7 @@ let project = Project(
             bundleId: "io.combineflow.CombineFlow",
             deploymentTargets: .iOS("17.0"),
             infoPlist: .default,
-            sources: ["Sources/CombineFlow/**"],
+            sources: ["Sources/CombineFlow"],
             settings: .settings(base: [
                 "SWIFT_VERSION": "6.0"
             ])

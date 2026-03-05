@@ -25,7 +25,7 @@ let project = Project(
                     ]
                 ]
             ]),
-            sources: ["Sources/**"],
+            sources: ["Sources"],
             dependencies: [
                 .project(target: "CombineFlow", path: "../CombineFlow")
             ],
