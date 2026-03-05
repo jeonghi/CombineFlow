@@ -8,28 +8,37 @@ final class AppFlow: Flow {
 
     func navigate(to step: Step) -> FlowContributors {
         guard let step = step as? AppStep else { return .none }
-
         switch step {
-        case .counterRequested:
-            return navigateToCounter()
-        case .counterCompleted(let count):
-            return navigateToDetail(count: count)
+        case .splash:
+            return navigateToSplash()
+        case .login:
+            return navigateToLogin()
+        case .loginCompleted, .main:
+            return navigateToMain()
         }
     }
 
-    private func navigateToCounter() -> FlowContributors {
-        let counterFlow = CounterFlow(navigationController: navigationController)
+    private func navigateToSplash() -> FlowContributors {
+        let flow = SplashFlow(navigationController: navigationController)
         return .one(flowContributor: .contribute(
-            withNextPresentable: counterFlow,
-            withNextStepper: OneStepper(withSingleStep: CounterStep.showCounter)
+            withNextPresentable: flow,
+            withNextStepper: OneStepper(withSingleStep: SplashStep.start)
         ))
     }
 
-    private func navigateToDetail(count: Int) -> FlowContributors {
-        let detailFlow = DetailFlow(navigationController: navigationController)
+    private func navigateToLogin() -> FlowContributors {
+        let flow = LoginFlow(navigationController: navigationController)
         return .one(flowContributor: .contribute(
-            withNextPresentable: detailFlow,
-            withNextStepper: OneStepper(withSingleStep: DetailStep.showDetail(count: count))
+            withNextPresentable: flow,
+            withNextStepper: OneStepper(withSingleStep: LoginStep.showLogin)
+        ))
+    }
+
+    private func navigateToMain() -> FlowContributors {
+        let flow = MainFlow()
+        return .one(flowContributor: .contribute(
+            withNextPresentable: flow,
+            withNextStepper: OneStepper(withSingleStep: MainStep.showMain)
         ))
     }
 }
